@@ -1,0 +1,15 @@
+name             'edgemicro'
+maintainer       'Sean Williams'
+maintainer_email 'swilliams@apigee.com'
+license          'All rights reserved'
+description      'Installs/Configures edgemicro 2.1.1'
+long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
+version          '0.2.3'
+
+depends 'yum'
+#depends 'yum-epel'
+#depends 'net-tools'
+depends 'tar'
+depends 'zipfile'
+depends 'nginx'
+depends 'firewalld'
