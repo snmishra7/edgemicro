@@ -13,6 +13,11 @@ platforms:
 
 suites:
   - name: default
+    driver:
+      vm_hostname: edgemicro.com
+      network:
+        #change the IP address to a unique IP in the same network range as the hosts interface IP
+      - ["public_network", {ip: "192.168.99.120", bridge: "en0: Wi-Fi (AirPort)"}]
     run_list:
       - recipe[edgemicro]
     attributes:

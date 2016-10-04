@@ -256,6 +256,74 @@ cd into the edgemicro directory:
 - `kitchen destroy` to destroy the edgemicro virtual box VM.
 - `kitchen login` to login to the VM.
 
+#### Make sure you change the IP address
+The Kitchen configuration uses Vagrant as the driver and Vagrant only allows
+bridged networking.  Therefore, you must change the IP address to a unique IP
+in the same network range as the hosts interface IP.
+
+```
+suites:
+  - name: default
+    driver:
+      vm_hostname: edgemicro.com
+      network:
+      - ["public_network", {ip: "192.168.103.110", bridge: "en0: Wi-Fi (AirPort)"}]
+    run_list:
+      - recipe[edgemicro]
+    attributes:
+```
+
+For example, if you run `ifconfig` in your terminal on a Mac or `ipconfig` on
+Windows, then you should see your IP address.
+
+```
+en0: flags=8863<UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST> mtu 1500
+  ...
+  inet 192.168.111.101 netmask ... broadcast 192.168.111.255
+	...
+	status: active
+```
+
+Copy your IP address and change the last octet to a different value - `192.168.111.102`.
+Paste it into the `edgemicro/.kitchen.yaml` file.
+
+execute
+`kitchen destroy`
+
+then
+`kitchen converge`
+
+#### Error received during start up
+If you receive an error similar to the one below. Then it means that Vagrant could not
+determine which network interface to use to assign your machine a public IP.
+
+```
+==> default: Available bridged network interfaces:
+1) en0: Wi-Fi (AirPort)
+2) en1: Thunderbolt 1
+3) en2: Thunderbolt 2
+4) p2p0
+5) awdl0
+6) bridge0
+```
+
+In this case you need to copy the first item below and paste it in the
+edgemicro/.kitchen.yaml file. Replace the value next to bridge with the
+first item from the list displayed on your machine.  
+
+```
+suites:
+  - name: default
+    driver:
+      vm_hostname: edgemicro.com
+      network:
+      - ["public_network", {ip: "192.168.103.110", bridge: "en0: Wi-Fi (AirPort)"}]
+    run_list:
+      - recipe[edgemicro]
+    attributes:
+```
+
+
 #### After kitchen up finishes execution
 Once Kitchen finished executing you should see a message similar to the one below.
 
@@ -289,8 +357,13 @@ root     12386 12366  0 19:11 pts/0    00:00:00 grep --color=auto nginx
 Now you can send requests to the nginx server, which will route requests to the edgemicro.
 We start Nginx listening on port 80 by default.
 
+Get an access token.
 ```
-# curl http://{ip_of_vm}:80/base_path/pathsuffix
+curl -i -X POST --user client_id:secret "http://<org>-<env>.apigee.net/edgemicro-auth/token" -d '{"grant_type": "client_credentials"}' -H "Content-Type: application/json"
+```
+
+```
+curl -i -H "Authorization: Bearer bearer_token" http://{ip_of_vm}:80/base_path/pathsuffix
 ```
 
 ### Berksfile

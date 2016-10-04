@@ -9,6 +9,7 @@
 
 include_recipe 'yum'
 include_recipe 'tar'
+include_recipe 'firewalld'
 #include_recipe 'yum-epel'
 #include_recipe 'net-tools'
 
@@ -38,8 +39,13 @@ execute node['edgemicro']['initscript'] do
 end
 
 if (node['edgemicro']['nginx_enabled'] == true) then
-  include_recipe 'firewalld'
   include_recipe 'nginx'
+
+  ##open port 80
+  firewalld_service 'http' do
+    action :add
+    zone   'public'
+  end
 
   directory "#{user_home}/nginx" do
   #directory '/home/vagrant/nginx' do
@@ -151,30 +157,6 @@ bash 'Install edgemicro via npm' do
   EOF
 end
 
-#Get the edgemicro zip file
-=begin
-remote_file "#{user_home}/apigee-edge-micro.zip" do
-  source 'https://s3.amazonaws.com/apigee-sdks/edgemicrogateway/latest/apigee-edge-micro.zip'
-  owner node['edgemicro']['user']
-  group node['edgemicro']['user']
-  mode '0777'
-  action :create
-end
-
-zipfile "#{user_home}/apigee-edge-micro.zip" do
-  action :extract
-  into '/usr/local/share'
-end
-=end
-
-=begin
-link '/usr/local/bin/edgemicro' do
-  to "/usr/local/share/" + node['edgemicro']['folder_prefix'] + node['edgemicro']['version'] + "/cli/edgemicro"
-  action :create
-  link_type :symbolic
-end
-=end
-
 
 results = "/tmp/configure_output.txt"
 file results do
@@ -208,8 +190,6 @@ execute "configure microgateway" do
   command "./edgemicro configure -o org -e env -u user@apigee.com -p password &> #{results}"
 end
 =end
-
-
 
 key = "/tmp/key.txt"
 file key do
@@ -261,6 +241,12 @@ for i in 1..node['edgemicro']['processes'] do
 =end
   end
 
+  if (node['edgemicro']['nginx_enabled'] == false) then
+    firewalld_port port_current.to_s + '/tcp' do
+      action :add
+      zone   'public'
+    end
+  end
 
   start_results = "/tmp/start_output_port_" + port_current.to_s + ".txt"
   file start_results do
